@@ -81,6 +81,6 @@ if [ "$COMPRESS" == "true" ]; then
     RESULT_FILE="$OUTPUT_FILE.tar.gz"
 fi
 
-aws s3 cp $RESULT_FILE s3://$BUCKET_DESTINATION
+aws s3 cp $RESULT_FILE s3://$BUCKET_DESTINATION/$(basename $RESULT_FILE)
 
 rm $RESULT_FILE
