@@ -1,0 +1,86 @@
+#!/bin/bash
+
+if [ -n "$CONNECTION_STRING" ]; then
+
+    RX="mysql\:\/\/([aA-zZ0-9].*)\:(.*)\@([^\/\:]*)\:?([0-9]*)?\/?([aA-zZ_-]*)?"
+
+    if [[ $CONNECTION_STRING =~ $RX ]]; then
+        USER=${BASH_REMATCH[1]}
+        PASS=${BASH_REMATCH[2]}
+        HOST=${BASH_REMATCH[3]}
+        PORT=${BASH_REMATCH[4]}
+
+        if [ ! -n "$DB" ]; then
+            DB=${BASH_REMATCH[5]}
+        fi
+
+    fi
+
+fi
+
+if [ ! -n "$WORK_DIR" ]; then
+    WORK_DIR="/tmp"
+fi
+
+echo "Using workdir: $WORK_DIR"
+
+if [ ! -w $WORK_DIR ]; then
+    echo "WORK_DIR: < $WORK_DIR > is not writable"
+    exit 1
+fi
+
+if [ -n "$DATE_FORMAT" ]; then
+    DATE_FORMAT="+%d-%h-%Y-%H-%M-%S"
+fi
+
+OUTPUT_FILE="$WORK_DIR/$(date '+%d-%h-%Y-%H-%M-%S').sql"
+
+if [ ! -n "$HOST" ]; then
+    echo "HOST IS REQUIRED, either by setting HOST env or by using a connection string CONNECTION_STRING = mysql://user:pass@host/db"
+    exit 1
+fi
+
+if [ ! -n "$USER" ]; then
+    echo "USER IS REQUIRED, either by setting USER env or by using a connection string CONNECTION_STRING = mysql://user:pass@host/db"
+    exit 1
+fi
+
+if [ ! -n "$PASS" ]; then
+    echo "PASS IS REQUIRED, either by setting PASS env or by using a connection string CONNECTION_STRING = mysql://user:pass@host/db"
+    exit 1
+fi
+
+if [ ! -n "$PORT" ]; then
+    PORT=3306
+fi
+
+if [ ! -n "$DB" ]; then
+    echo "DB IS REQUIRED"
+    exit 1
+fi
+
+if [ ! -n "$BUCKET_DESTINATION" ]; then
+    echo "BUCKET_DESTINATION is required, ex: yourbucket/prefix"
+    exit 1
+fi
+
+echo "DUMPING database <$DB> FROM <$HOST> VIA user: <$USER> to:  ${OUTPUT_FILE}"
+
+mysqldump -h $HOST -u $USER -p$PASS $DB $TABLES >$OUTPUT_FILE
+
+if [ ! $? -eq 0 ]; then
+    exit 1
+fi
+
+RESULT_FILE="$OUTPUT_FILE"
+
+if [ "$COMPRESS" == "true" ]; then
+    echo "COMPRESSING $OUTPUT_FILE"
+    tar czf $OUTPUT_FILE.tar.gz $OUTPUT_FILE
+    rm $OUTPUT_FILE
+    RESULT_FILE="$OUTPUT_FILE.tar.gz"
+fi
+
+aws s3 cp $RESULT_FILE s3://$BUCKET_DESTINATION
+
+rm $RESULT_FILE
