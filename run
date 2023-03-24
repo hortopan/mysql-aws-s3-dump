@@ -66,7 +66,7 @@ fi
 
 echo "DUMPING database <$DB> FROM <$HOST> VIA user: <$USER> to:  ${OUTPUT_FILE}"
 
-mysqldump -h $HOST -u $USER -p$PASS $DB $TABLES >$OUTPUT_FILE
+mysqldump --single-transaction -h $HOST -u $USER -p$PASS $DB $TABLES >$OUTPUT_FILE
 
 if [ ! $? -eq 0 ]; then
     exit 1
