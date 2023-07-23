@@ -34,3 +34,4 @@ This uses aws cli so you will need to configure [AWS cli](https://docs.aws.amazo
 * `DATE_FORMAT="+%d-%h-%Y-%H-%M-%S"`: output date format for file name.
 * `TABLES=table1 table2`: dump specific tables
 * `COMPRESS=true` : compress with tar/gzip 
+* `DB`: dump specific database

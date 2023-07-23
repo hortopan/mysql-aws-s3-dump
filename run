@@ -54,19 +54,21 @@ if [ ! -n "$PORT" ]; then
     PORT=3306
 fi
 
-if [ ! -n "$DB" ]; then
-    echo "DB IS REQUIRED"
-    exit 1
-fi
-
 if [ ! -n "$BUCKET_DESTINATION" ]; then
     echo "BUCKET_DESTINATION is required, ex: yourbucket/prefix"
     exit 1
 fi
 
-echo "DUMPING database <$DB> FROM <$HOST> VIA user: <$USER> to:  ${OUTPUT_FILE}"
+if [ ! -n "$DB" ]; then
+    echo "No DB specified, dumping all databases"
+    DUMP_OPTIONS="--all-databases"
+else
+    DUMP_OPTIONS=$DB
+fi
 
-mysqldump --single-transaction -h $HOST -u $USER -p$PASS $DB $TABLES >$OUTPUT_FILE
+echo "DUMPING $DUMP_OPTIONS FROM <$HOST> VIA user: <$USER> to:  ${OUTPUT_FILE}"
+
+mysqldump --single-transaction -h $HOST -u $USER -p$PASS $DUMP_OPTIONS >$OUTPUT_FILE
 
 if [ ! $? -eq 0 ]; then
     exit 1
